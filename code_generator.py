@@ -79,13 +79,26 @@ if __name__ == '__main__':
     #     print(f'req_elem: {json.dumps(elem, indent=4)}')
 
 
-    code_revisor = UnittestCodeRevisor(tags=['mgt-api-controller ', 'mgt-pro-api-controller', 'mgt-pro-margin-api-controller', 'mgt-finance-audit-api-controller', 'order-mgt-api-controller'])
+    code_revisor = UnittestCodeRevisor(tags=['mgt-api-controller'])
 
     code_lines = code_revisor.get_code_lines(req_elem_list)
 
     result = SEP.join(code_lines)
 
-    print(f'{result}')
 
+    # import autopep8
+    # result = autopep8.fix_code(
+    #         result, options={'aggressive': 1})
+
+
+
+    # try:
+    #     import autopep8
+    #     result = autopep8.fix_code(
+    #         result, options={'aggressive': 1})
+    # except ImportError as e:
+    #     pass
+
+    print(f'{result}')
 
     # req_parser = PostmanCollectionParser(fobj)

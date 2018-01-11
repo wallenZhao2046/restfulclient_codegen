@@ -18,7 +18,10 @@ class UnittestCodeRevisor(object):
             'import json',
             'import unittest',
             'HOST= ""',
-            "HEAD={}",
+            'HEAD={',
+            "   'Referer' : f'{HOST}/swagger-ui.html',",
+            "   'Content-Type': 'application/json' ",
+            "}",
             'class AllTest(unittest.TestCase):',
 
         ]
@@ -38,27 +41,25 @@ class UnittestCodeRevisor(object):
 
 
         var_inurls = self.get_var_in_url(url)
-
-
         case_name = url.replace('/', '_').replace('.', '_').replace(':', '').replace('-', '_').replace('{', '').replace('}', '')
-
         variabled_url = self.__variable_url(url)
-
-
-        variabled_param = self.__variable_param(params)
-        variabled_data = self.__variable_param(data)
-
+        variabled_param = self.__gen_variables(params, type='params')
+        variabled_data = self.__gen_variables(data, type='data')
         test_method_name = f"    def test_{case_name}(self):"
 
         for var in var_inurls:
-            test_method_name = test_method_name + SEP + '       ' + str(var) + ' = ""'
+            test_method_name = test_method_name + SEP + '       ' + str(var) + " = ''"
+
+        for item in variabled_param:
+            test_method_name = test_method_name + SEP + '       ' + item
+
+        for item in variabled_data:
+            test_method_name = test_method_name + SEP + '       ' + item
+
 
         # test code template
         call_code_format = (
         '''
-        params = {params}
-        data = {data}
-
         url = f'%s{url}' %HOST 
         method = '{method}'
 
@@ -81,7 +82,7 @@ class UnittestCodeRevisor(object):
             case_name=case_name,
             url=variabled_url,
             method=method.lower(),
-            params=repr(variabled_param),
+            params=repr(params),
             data=data
         )
 
@@ -95,8 +96,17 @@ class UnittestCodeRevisor(object):
 
         return vari_url
 
-    def __variable_param(self, params: dict):
-        return params
+    def __gen_variables(self, params: dict, type='params'):
+        result = []
+        for key in params.keys():
+            result.append(f'_{key.replace("-", "_")} = ""')
+
+        result.append(f'{type} = {{')
+        for key, value in params.items():
+            result.append(f"    '{key}': _{key.replace('-', '_')} , ")
+
+        result.append('}')
+        return result
 
     def get_var_in_url(self, url):
         result = []
@@ -109,18 +119,7 @@ class UnittestCodeRevisor(object):
 
         return result
 
-#
-# class BehaveTestCodeRevisor(object):
-#     def __init__(self, req_list):
-#         self.req_list = req_list
-#
-#     def get_code_lines(self):
-#         for req in self.req_list:
-#             url = req['url']
-#             params = req['params']
-#             data = req['data']
-#
-#             params
+
 
 
 
