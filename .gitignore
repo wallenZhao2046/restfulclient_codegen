@@ -1,3 +1,9 @@
+# mine
+.idea/
+test_data/
+tmp/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
