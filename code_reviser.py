@@ -1,6 +1,7 @@
 # coding: utf8
 
 import os
+import re
 
 SEP = os.linesep
 
@@ -34,6 +35,11 @@ class UnittestCodeRevisor(object):
 
 
     def __get_code(self, url, method, headers, params, data):
+
+
+        var_inurls = self.get_var_in_url(url)
+
+
         case_name = url.replace('/', '_').replace('.', '_').replace(':', '').replace('-', '_').replace('{', '').replace('}', '')
 
         variabled_url = self.__variable_url(url)
@@ -42,29 +48,32 @@ class UnittestCodeRevisor(object):
         variabled_param = self.__variable_param(params)
         variabled_data = self.__variable_param(data)
 
+        test_method_name = f"    def test_{case_name}(self):"
+
+        for var in var_inurls:
+            test_method_name = test_method_name + SEP + '       ' + str(var) + ' = ""'
+
         # test code template
         call_code_format = (
-            '''
-            def test_{case_name}(self):
-        
-                url = '%s{url}' %HOST
-                method = '{method}'
-        
-                params = {params}
-                data = {data}
-        
-                print("!!! url is %s{url}" %HOST)
-                print("!!! method is %s" %method)
-                print("!!! headers is %r" %HEAD)
-                print("!!! params is {params}")
-                print("!!! data is %r" %data)
-        
-                res = requests.request(method, url, headers=HEAD, params=params, data=data)
-                res = json.loads(res.text)
-                print('--- result: %r' %res) 
-                assert res['status'] == 'ok'
+        '''
+        params = {params}
+        data = {data}
 
-            '''
+        url = f'%s{url}' %HOST 
+        method = '{method}'
+
+        print(f"!!! url is %s{url}" %HOST)
+        print("!!! method is %s" %method)
+        print("!!! headers is %r" %HEAD)
+        print("!!! params is {params}")
+        print("!!! data is %r" %data)
+
+        res = requests.request(method, url, headers=HEAD, params=params, data=data)
+        res = json.loads(res.text)
+        print('--- result: %r' %res) 
+        assert res['status'] == 'ok'
+
+        '''
         )
 
         call_code = call_code_format.format(
@@ -75,17 +84,30 @@ class UnittestCodeRevisor(object):
             params=repr(variabled_param),
             data=data
         )
+
+        call_code = test_method_name + SEP + call_code
+
         return call_code
 
     def __variable_url(self, url):
         vari_url = url.replace(self.host, '%s')
-        vari_url = vari_url.replace('{', '').replace('}', '')
+        vari_url = vari_url.replace('-', '_')
 
         return vari_url
 
     def __variable_param(self, params: dict):
         return params
 
+    def get_var_in_url(self, url):
+        result = []
+
+        vars = re.findall('\{(.*?)\}', url)
+
+        for var in vars:
+            var = var.replace('-', '_')
+            result.append(var)
+
+        return result
 
 #
 # class BehaveTestCodeRevisor(object):
