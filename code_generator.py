@@ -3,12 +3,15 @@
 import argparse
 import os
 import json
-from code_reviser import UnittestCodeRevisor
+from code_reviser import UnittestCodeRevisor, BehaveCodeRevisor
 from request_parser import HarRequestParser, PostmanCollectionParser, SwaggerParser
 
 SEP = os.linesep
 
 class CodeGenerator(object):
+    '''
+    命令行工具入口
+    '''
     def __init__(self):
         pass
 
@@ -78,12 +81,11 @@ if __name__ == '__main__':
     # for elem in req_elem_list:
     #     print(f'req_elem: {json.dumps(elem, indent=4)}')
 
-
-    code_revisor = UnittestCodeRevisor(tags=['mgt-api-controller'])
-
-    code_lines = code_revisor.get_code_lines(req_elem_list)
-
-    result = SEP.join(code_lines)
+    #### work fine
+    # code_revisor = UnittestCodeRevisor(tags=['mgt-api-controller'])
+    # code_lines = code_revisor.get_code_lines(req_elem_list)
+    # result = SEP.join(code_lines)
+    # print(f'{result}')
 
 
     # import autopep8
@@ -99,6 +101,15 @@ if __name__ == '__main__':
     # except ImportError as e:
     #     pass
 
+    code_revisor = BehaveCodeRevisor(tags=['mgt-api-controller'])
+
+    code_lines, feature_lines = code_revisor.get_code_lines(req_elem_list)
+    result = SEP.join(code_lines)
+
+    feature = SEP.join(feature_lines)
+
     print(f'{result}')
+    print(f'=================')
+    print(f'{feature}')
 
     # req_parser = PostmanCollectionParser(fobj)
