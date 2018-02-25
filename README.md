@@ -6,6 +6,7 @@ restfulclient_codegen is a tool to generate restful client test code automatical
 There are three components, code generator request_parser and code reviser
 
 
+```
 usage: code_generator.py [-h] [-i INFILE] [-f REQFORMAT] [-o OUTFILE]
                          [-t TESTTYPE] [-TAG TAGS]
 
@@ -30,3 +31,4 @@ optional arguments:
   -TAG TAGS     OPTIONAL: specify tag name of swagger-ui json file, comma
                 seperated multiple tag name.
 
+```
