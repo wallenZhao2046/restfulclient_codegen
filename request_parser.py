@@ -147,9 +147,9 @@ class PostmanCollectionParser(object):
 
 
 class SwaggerParser(object):
-    def __init__(self, fobj: object, exclude_tags=list()):
+    def __init__(self, fobj: object, include_tags=list()):
         self.fobj = fobj
-        self.exclude_tags = exclude_tags
+        self.__include_tags = include_tags
 
     def parse_request(self) -> list:
         content = json.load(self.fobj)
@@ -182,7 +182,9 @@ class SwaggerParser(object):
                 'tag': tag
             }
 
-            if tag[0] not in self.exclude_tags:
+            if self.__include_tags and tag[0] in self.__include_tags:
+                req_list.append(d)
+            else:
                 req_list.append(d)
 
         return req_list

@@ -159,7 +159,7 @@ class BehaveCodeRevisor(object):
                 code_lines.append('=======================================')
 
 
-            return code_lines, feature_lines
+            return code_lines
 
     def __get_feature_lines(self, vars):
         code = (
