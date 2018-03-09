@@ -154,7 +154,8 @@ class SwaggerParser(object):
     def parse_request(self) -> list:
         content = json.load(self.fobj)
         tags = content['tags']
-        host = content['host']
+        if 'host' in content:
+            host = content['host']
 
         definitions = content['definitions']
         body_def_dict = self.__parse_definitions(definitions)
