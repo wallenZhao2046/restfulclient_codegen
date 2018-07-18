@@ -2,6 +2,7 @@
 .idea/
 test_data/
 tmp/
+.out
 
 
 # Byte-compiled / optimized / DLL files
