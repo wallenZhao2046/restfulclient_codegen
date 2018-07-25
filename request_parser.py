@@ -205,7 +205,9 @@ class SwaggerParser(object):
     def __parse_properties(self, prop_obj) -> dict:
         data_dict = dict()
         for param_name, value in prop_obj.items():
-            data_dict[param_name] = value['type']
+            print(f'param_name: {param_name}, value: {value}')
+            if 'type' in value:
+                data_dict[param_name] = value['type']
 
         return data_dict
 

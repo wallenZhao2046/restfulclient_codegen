@@ -8,8 +8,6 @@ SEP = os.linesep
 
 def variable_url(url, host='localhost'):
     vari_url = url.replace(host, '%s')
-    vari_url = vari_url.replace('-', '_')
-
     return vari_url
 
 
