@@ -9,10 +9,12 @@ from request_parser import HarRequestParser, PostmanCollectionParser, SwaggerPar
 
 SEP = os.linesep
 
+
 class CodeGenerator(object):
     '''
     命令行工具入口
     '''
+
     def __init__(self):
         pass
 
@@ -103,7 +105,6 @@ class CodeGenerator(object):
 
 
 if __name__ == '__main__':
-
     CodeGenerator().main()
 
     # fobj = open("test_data/swagger-ui-sample.json", mode='r', encoding='utf-8', closefd=True)

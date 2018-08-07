@@ -6,10 +6,12 @@ import os
 
 SEP = os.linesep
 
+
 def filter_url(url: str) -> object:
     if url.find('?') > 0:
         url = url[:url.find('?')]
     return url
+
 
 class HarRequestParser(object):
     def __init__(self, fobj):
@@ -27,11 +29,11 @@ class HarRequestParser(object):
             request_el = entry['request']
             url, method, headers, params, data = self.__get_request_element(request_el)
             d = {
-                'url' : url,
-                'method' : method,
-                'headers' : headers,
-                'params' : params,
-                'data' : data
+                'url': url,
+                'method': method,
+                'headers': headers,
+                'params': params,
+                'data': data
             }
 
             print(f'data is {d}')
@@ -66,7 +68,8 @@ class HarRequestParser(object):
             (d['name'], d['value']) for d in request_el['headers'])
         ## filter headers
         headers = {k: v for k, v in headers.items() if
-                   k.lower().startswith('referer') or k.lower().startswith('token') or k.lower().startswith('hb-pro-token')}
+                   k.lower().startswith('referer') or k.lower().startswith('token') or k.lower().startswith(
+                       'hb-pro-token')}
         headers['Content-Type'] = 'application/json'
         return url, method, headers, params, data
 
@@ -198,7 +201,7 @@ class SwaggerParser(object):
         for data_name, value in def_obj.items():
             if 'ApiResponse' in data_name:
                 continue
-            if 'properties' not in value :
+            if 'properties' not in value:
                 continue
             data_dict = self.__parse_properties(value['properties'])
             definition[data_name] = data_dict
@@ -234,7 +237,7 @@ class SwaggerParser(object):
             elif location == 'path':
                 pass
             elif location == 'header':
-            #     TODO: need to fix header
+                #     TODO: need to fix header
                 pass
             else:
                 raise Exception(f'unsupport param in {location}')
@@ -243,5 +246,3 @@ class SwaggerParser(object):
 
     def __parse_headers(self, content_obj):
         return {}
-
-

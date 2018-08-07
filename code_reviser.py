@@ -166,11 +166,11 @@ class CustomCodeRevisor(object):
         variabled_data = self.gen_variables(data, type='data')
 
         case_code = \
-        f'''    
-                @data(*annotated('test_{case_name}'))
-                @unpack
-                def test_{method}_{case_name}(self, token, exchange_code, status):
-        '''
+            f'''    
+                    @data(*annotated('test_{case_name}'))
+                    @unpack
+                    def test_{method}_{case_name}(self, token, exchange_code, status):
+            '''
 
         for item in var_inurls:
             case_code = case_code + SEP + '                     ' + item
