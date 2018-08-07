@@ -6,11 +6,6 @@ import re
 SEP = os.linesep
 
 
-def variable_url(url, host='localhost'):
-    vari_url = url.replace(host, '%s')
-    return vari_url
-
-
 class UnittestCodeRevisor(object):
     def __init__(self, host='localhost', tags=[]):
         self.host = host
@@ -38,20 +33,24 @@ class UnittestCodeRevisor(object):
 
             if self.tags and not set(elem['tag']).issubset(self.tags):
                 continue
-            code_lines.append(self.__get_code(elem['url'], elem['method'], elem['headers'], elem['params'], elem['data']))
+            code_lines.append(
+                self.__get_code(elem['url'], elem['method'], elem['headers'], elem['params'], elem['data']))
 
         return code_lines
 
     def __get_code(self, url, method, headers, params, data):
 
+        print(f'get_code {url} {method}')
+
         var_inurls = UnittestCodeRevisor.gen_var_in_url(url)
-        case_name = url.replace('/', '_').replace('.', '_').replace(':', '').replace('-', '_').replace('{', '').replace('}', '')
+        case_name = url.replace('/', '_').replace('.', '_').replace(':', '').replace('-', '_').replace('{', '').replace(
+            '}', '')
 
         variabled_url = variable_url(url, self.host)
         variabled_param = UnittestCodeRevisor.gen_variables(params, type='params')
         variabled_data = UnittestCodeRevisor.gen_variables(data, type='data')
 
-        case_code = f"    def test_{case_name}(self):"
+        case_code = f"    def test_{method}_{case_name}(self):"
 
         for item in var_inurls:
             case_code = case_code + SEP + '       ' + item
@@ -62,25 +61,24 @@ class UnittestCodeRevisor(object):
         for item in variabled_data:
             case_code = case_code + SEP + '       ' + item
 
-
         # test code template
         call_code_format = (
-        '''
-        url = f'%s{url}' %HOST 
-        method = '{method}'
-
-        print(f"!!! url is %s{url}" %HOST)
-        print("!!! method is %s" %method)
-        print("!!! headers is %r" %HEAD)
-        print("!!! params is {params}")
-        print("!!! data is %r" %data)
-
-        res = requests.request(method, url, headers=HEAD, params=params, data=data)
-        res = json.loads(res.text)
-        print('--- result: %r' %res) 
-        assert res['status'] == 'ok'
-
-        '''
+            '''
+            url = f'%s{url}' %HOST 
+            method = '{method}'
+    
+            print(f"!!! url is %s{url}" %HOST)
+            print("!!! method is %s" %method)
+            print("!!! headers is %r" %HEAD)
+            print("!!! params is {params}")
+            print("!!! data is %r" %data)
+    
+            res = requests.request(method, url, headers=HEAD, params=params, data=data)
+            res = json.loads(res.text)
+            print('--- result: %r' %res) 
+            assert res['status'] == 'ok'
+    
+            '''
         )
 
         call_code = call_code_format.format(
@@ -115,9 +113,135 @@ class UnittestCodeRevisor(object):
 
         for var in vars:
             var = var.replace('-', '_')
-            result.append(str(var) + " = ''")
+            result.append(str(var) + " = '100'")
 
         return result
+
+
+class CustomCodeRevisor(object):
+    def __init__(self, host='localhost', tags=[]):
+        self.host = host
+        self.tags = tags
+
+    def get_code_lines(self, req_elem_list):
+        code_lines = []
+
+        import_apart = [
+            'import requests',
+            'import json',
+            'import unittest',
+            'from ddt import *',
+            'import os',
+            'import csv',
+            'import copy',
+            '@ddt',
+            'class AllTest(unittest.TestCase):',
+            '               HOST= ""',
+            '               HEAD={',
+            "                   'Referer' : f'{HOST}/swagger-ui.html',",
+            "                   'Content-Type': 'application/json' ",
+            "               }",
+
+        ]
+
+        code_lines = code_lines + import_apart
+
+        for elem in req_elem_list:
+
+            if self.tags and not set(elem['tag']).issubset(self.tags):
+                continue
+            code_lines.append(
+                self.__get_code(elem['url'], elem['method'], elem['headers'], elem['params'], elem['data']))
+
+        return code_lines
+
+    def __get_code(self, url, method, headers, params, data):
+
+        var_inurls = self.gen_var_in_url(url)
+        case_name = url.replace('/', '_').replace('.', '_').replace(':', '').replace('-', '_').replace('{', '').replace(
+            '}', '')
+
+        variabled_url = variable_url(url, self.host)
+        variabled_param = self.gen_variables(params, type='params')
+        variabled_data = self.gen_variables(data, type='data')
+
+        case_code = \
+        f'''    
+                @data(*annotated('test_{case_name}'))
+                @unpack
+                def test_{method}_{case_name}(self, token, exchange_code, status):
+        '''
+
+        for item in var_inurls:
+            case_code = case_code + SEP + '                     ' + item
+
+        for item in variabled_param:
+            case_code = case_code + SEP + '                     ' + item
+
+        for item in variabled_data:
+            case_code = case_code + SEP + '                     ' + item
+
+        # test code template
+        call_code_format = (
+            '''
+                    url = f'%s{url}' %self.HOST 
+                    method = '{method}'
+                    
+                    header = copy.deepcopy(self.HEAD)
+                    if token == 'valid':
+                        header['HB-PRO-TOKEN'] = self.TOKEN
+                    
+                    if exchange_code != 'empty':
+                        header['CLOUD-EXCHANGE'] = exchange_code
+                    
+                    print(f"!!! url is %s{url}" %self.HOST)
+                    print("!!! method is %s" %method)
+                    print("!!! headers is %r" %header)
+                    print("!!! params is %r" %params)
+                    print("!!! data is %r" %data)
+                    
+                    res = requests.request(method, url, headers=header, params=params, data=data)
+                    print('--- result: %r' %res) 
+                    assert res.status_code == int(status), 'expect %s, but %s' %(status, res.status_code)
+            '''
+        )
+
+        call_code = call_code_format.format(
+            sep=SEP,
+            case_name=case_name,
+            url=variabled_url,
+            method=method.lower(),
+            params=repr(params),
+            data=data
+        )
+
+        call_code = case_code + SEP + call_code
+
+        return call_code
+
+    def gen_variables(self, params: dict, type='params') -> list:
+        result = []
+        for key in params.keys():
+            result.append(f'_{key.replace("-", "_")} = ""')
+
+        result.append(f'{type} = {{')
+        for key, value in params.items():
+            result.append(f"    '{key}': _{key.replace('-', '_')} , ")
+
+        result.append('}')
+        return result
+
+    def gen_var_in_url(self, url) -> list:
+        result = []
+
+        vars = re.findall('\{(.*?)\}', url)
+
+        for var in vars:
+            var = var.replace('-', '_')
+            result.append(str(var) + " = '100'")
+
+        return result
+
 
 class BehaveCodeRevisor(object):
     def __init__(self, host='localhost', tags=[]):
@@ -125,76 +249,71 @@ class BehaveCodeRevisor(object):
         self.tags = tags
 
     def get_code_lines(self, req_elem_list):
-            code_lines = []
-            feature_lines = []
+        code_lines = []
+        feature_lines = []
 
-            import_apart = [
-                '# coding: utf8',
-                '',
-                'from behave import *',
-                'import json',
-                ''
-            ]
+        import_apart = [
+            '# coding: utf8',
+            '',
+            'from behave import *',
+            'import json',
+            ''
+        ]
 
-            for elem in req_elem_list:
+        for elem in req_elem_list:
 
-                if self.tags and not set(elem['tag']).issubset(self.tags):
-                    continue
+            if self.tags and not set(elem['tag']).issubset(self.tags):
+                continue
 
-                variabled_url = variable_url(elem['url'], self.host)
-                variabled_param = self.__gen_variables(elem['params'], type='params')
-                variabled_data = self.__gen_variables(elem['data'], type='data')
+            variabled_url = variable_url(elem['url'], self.host)
+            variabled_param = self.__gen_variables(elem['params'], type='params')
+            variabled_data = self.__gen_variables(elem['data'], type='data')
 
-                vars = self.__get_vars(variabled_data, variabled_param, variabled_url)
+            vars = self.__get_vars(variabled_data, variabled_param, variabled_url)
 
-                code_lines.append(self.__get_feature_lines(vars))
+            code_lines.append(self.__get_feature_lines(vars))
 
-                code_lines.append('---------------------------------------')
-                code_lines = code_lines + import_apart
-                code_lines.append(
-                    self.__get_code(elem['url'], elem['method'], elem['headers'], elem['params'], elem['data']))
+            code_lines.append('---------------------------------------')
+            code_lines = code_lines + import_apart
+            code_lines.append(
+                self.__get_code(elem['url'], elem['method'], elem['headers'], elem['params'], elem['data']))
 
-                code_lines.append('=======================================')
+            code_lines.append('=======================================')
 
-
-            return code_lines
+        return code_lines
 
     def __get_feature_lines(self, vars):
         code = (
-'''
-#language: zh-CN
-
-@
-功能: 
-    场景大纲: 
-'''
+            '''
+            #language: zh-CN
+            
+            @
+            功能: 
+                场景大纲: 
+            '''
         )
 
-        code = code + "       假如 "
+        code = code + "假如 "
         for var in vars:
-            code = code + "<" + var + ">"
+            code = code + "<" + var + ">" + ", "
 
-        code = code + SEP + "       当 "
-        code = code + SEP + "       那么 <status><expect>"
-        code = code + SEP + "       例子:"
-        code = code + SEP + "       | "
+        code = code + SEP + "            当 "
+        code = code + SEP + "            那么 <status>, <expect>"
+        code = code + SEP + "            例子:"
+        code = code + SEP + "            | "
         for var in vars:
             code = code + var + " | "
         code = code + " status | expect |"
 
         return code
 
-
-
     def __get_code(self, url, method, headers, params, data):
 
         var_inurls = self.__gen_var_in_url(url)
-        case_name = url.replace('/', '_').replace('.', '_').replace(':', '').replace('-', '_').replace('{', '').replace('}', '')
 
         variabled_url = variable_url(url, self.host)
         variabled_param = self.__gen_variables(params, type='params')
         variabled_data = self.__gen_variables(data, type='data')
-
 
         # print(f'variabled_url: {variabled_url}')
         # print(f'variabled_param: {variabled_param}')
@@ -211,7 +330,6 @@ class BehaveCodeRevisor(object):
                     + then_part
 
         return call_code
-
 
     def __gen_variables(self, params: dict, type='params') -> list:
         result = []
@@ -238,11 +356,11 @@ class BehaveCodeRevisor(object):
         vars = self.__get_vars(data, params, url)
 
         given_code = (
-'@Given("'
+            '@Given("'
         )
 
         for var in vars:
-            given_code = given_code + '{' + var + '}'
+            given_code = given_code + '{' + var + '}' + ', '
 
         given_code = given_code + '")'
 
@@ -301,3 +419,11 @@ def step_impl(context, status, expect):
         return then_code
 
 
+def variable_url(url, host='localhost'):
+    vari_url = url.replace(host, '%s')
+
+    vars = re.findall('\{(.*?)\}', url)
+    for var in vars:
+        new_var = var.replace('-', '_')
+        vari_url = vari_url.replace(var, new_var)
+    return vari_url

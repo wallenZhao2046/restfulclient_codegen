@@ -164,29 +164,31 @@ class SwaggerParser(object):
         paths = content['paths']
 
         for url, req_content in paths.items():
-            method = list(req_content.keys())[0]
-            content_detail = req_content[method]
-            tag = content_detail['tags']
+            methods = req_content.keys()
+            for method in methods:
+                # method = list(req_content.keys())[0]
+                content_detail = req_content[method]
+                tag = content_detail['tags']
 
-            params, data = {}, {}
+                params, data = {}, {}
 
-            if 'parameters' in content_detail:
-                params, data = self.__parse_parameters(content_detail['parameters'], body_def_dict)
+                if 'parameters' in content_detail:
+                    params, data = self.__parse_parameters(content_detail['parameters'], body_def_dict)
 
-            headers = self.__parse_headers(content_detail)
-            d = {
-                'url': url,
-                'method': method,
-                'headers': headers,
-                'params': params,
-                'data': data,
-                'tag': tag
-            }
+                headers = self.__parse_headers(content_detail)
+                d = {
+                    'url': url,
+                    'method': method,
+                    'headers': headers,
+                    'params': params,
+                    'data': data,
+                    'tag': tag
+                }
 
-            if self.__include_tags and tag[0] in self.__include_tags:
-                req_list.append(d)
-            else:
-                req_list.append(d)
+                if self.__include_tags and tag[0] in self.__include_tags:
+                    req_list.append(d)
+                else:
+                    req_list.append(d)
 
         return req_list
 
@@ -205,7 +207,7 @@ class SwaggerParser(object):
     def __parse_properties(self, prop_obj) -> dict:
         data_dict = dict()
         for param_name, value in prop_obj.items():
-            print(f'param_name: {param_name}, value: {value}')
+            # print(f'param_name: {param_name}, value: {value}')
             if 'type' in value:
                 data_dict[param_name] = value['type']
 

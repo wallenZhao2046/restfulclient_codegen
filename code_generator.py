@@ -4,7 +4,7 @@ import argparse
 import os
 import json
 import textwrap
-from code_reviser import UnittestCodeRevisor, BehaveCodeRevisor
+from code_reviser import UnittestCodeRevisor, BehaveCodeRevisor, CustomCodeRevisor
 from request_parser import HarRequestParser, PostmanCollectionParser, SwaggerParser
 
 SEP = os.linesep
@@ -84,8 +84,10 @@ class CodeGenerator(object):
 
         if args.testtype == 'behave':
             code_revisor = BehaveCodeRevisor(tags=tags)
+        if args.testtype == 'custom':
+            code_revisor = CustomCodeRevisor(tags=tags)
         else:
-            code_revisor = UnittestCodeRevisor()
+            code_revisor = UnittestCodeRevisor(tags=tags)
 
         req_elem_list = req_parser.parse_request()
 
