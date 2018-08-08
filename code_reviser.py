@@ -24,7 +24,6 @@ class UnittestCodeRevisor(object):
             "   'Content-Type': 'application/json' ",
             "}",
             'class AllTest(unittest.TestCase):',
-
         ]
 
         code_lines = code_lines + import_apart
@@ -53,30 +52,30 @@ class UnittestCodeRevisor(object):
         case_code = f"    def test_{method}_{case_name}(self):"
 
         for item in var_inurls:
-            case_code = case_code + SEP + '       ' + item
+            case_code = case_code + SEP + '        ' + item
 
         for item in variabled_param:
-            case_code = case_code + SEP + '       ' + item
+            case_code = case_code + SEP + '        ' + item
 
         for item in variabled_data:
-            case_code = case_code + SEP + '       ' + item
+            case_code = case_code + SEP + '        ' + item
 
         # test code template
         call_code_format = (
             '''
-            url = f'%s{url}' %HOST 
-            method = '{method}'
-    
-            print(f"!!! url is %s{url}" %HOST)
-            print("!!! method is %s" %method)
-            print("!!! headers is %r" %HEAD)
-            print("!!! params is {params}")
-            print("!!! data is %r" %data)
-    
-            res = requests.request(method, url, headers=HEAD, params=params, data=data)
-            res = json.loads(res.text)
-            print('--- result: %r' %res) 
-            assert res['status'] == 'ok'
+        url = f'%s{url}' %HOST 
+        method = '{method}'
+        
+        print(f"!!! url is %s{url}" %HOST)
+        print("!!! method is %s" %method)
+        print("!!! headers is %r" %HEAD)
+        print("!!! params is {params}")
+        print("!!! data is %r" %data)
+        
+        res = requests.request(method, url, headers=HEAD, params=params, data=data)
+        res = res.json()
+        print('--- result: %r' %res) 
+        self.assertEqual('ok', res['status'])
     
             '''
         )
