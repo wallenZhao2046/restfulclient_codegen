@@ -117,6 +117,131 @@ class UnittestCodeRevisor(object):
         return result
 
 
+class ServiceCodeRevisor(object):
+    def __init__(self, host='localhost', tags=[]):
+        self.host = host
+        self.tags = tags
+
+    def get_code_lines(self, req_elem_list):
+        code_lines = []
+
+        service_name = self.tags[0].replace('-', '').replace('controller', '')
+
+        import_apart = [
+            'from common_utils.logger import logger',
+            'from common_service.base_service import BaseService',
+            '',
+            '',
+            f'class {service_name}Service(BaseService):',
+            '    def __init__(self, env_name):',
+            '        super().__init__(env_name)',
+            '        self.broker_host = self.config_info.get_broker_url()',
+        ]
+
+        code_lines = code_lines + import_apart
+
+        for elem in req_elem_list:
+
+            if self.tags and not set(elem['tag']).issubset(self.tags):
+                continue
+            code_lines.append(
+                self.__get_code(elem['url'], elem['method'], elem['headers'], elem['params'], elem['data']))
+
+        return code_lines
+
+    def __get_code(self, url, method, headers, params, data):
+
+        print(f'get_code {url} {method}')
+
+        var_inurls = self.gen_var_in_url(url)
+        case_name = url.replace('/', '_').replace('.', '_').replace(':', '').replace('-', '_').replace('{', '').replace(
+            '}', '')
+
+        variabled_url = variable_url(url, self.host)
+        variabled_param = self.__gen_request_vars(params, 'params')
+        variabled_data = self.__gen_request_vars(data, 'data')
+
+        param_in = ''
+        for item in var_inurls:
+            param_in += ', ' + item
+        if method == 'get':
+            for item in self.__gen_passin(params):
+                param_in += ', ' + item
+            case_code = f"    def query{case_name}(self{param_in}):"
+            req = "res = self.http_util.http_get(url, params)"
+        else:
+            for item in self.__gen_passin(data):
+                param_in += ', ' + item
+            case_code = f"    def update{case_name}(self{param_in}):"
+            req = "res = self.http_util.http_post(url, body=data)"
+
+        for item in variabled_param:
+            case_code = case_code + SEP + '        ' + item
+
+        for item in variabled_data:
+            case_code = case_code + SEP + '        ' + item
+
+        # test code template
+        call_code_format = (
+            '''
+        url = f'%s{url}' %self.broker_host 
+        method = '{method}'
+
+        logger.info(f"!!! url is {url}")
+        logger.info("!!! method is %s" %method)
+        logger.info("!!! params is %r" %params)
+        logger.info("!!! data is %r" %data)
+
+        {req}
+        if res['status'] != 'ok':
+            raise Exception("error with detail: %s" %res)
+        res = res.json()
+        logger.info('--- result: %r' %res) 
+        return res['data']
+
+            '''
+        )
+
+        call_code = call_code_format.format(
+            sep=SEP,
+            case_name=case_name,
+            url=variabled_url,
+            method=method.lower(),
+            params=repr(params),
+            req=req,
+            data=data
+        )
+
+        call_code = case_code + SEP + call_code
+
+        return call_code
+
+    def __gen_passin(self, params: dict) -> list:
+        result = list()
+        for key in params.keys():
+            result.append(f'_{key.replace("-", "_")} = ""')
+        return result
+
+    def __gen_request_vars(self, params: dict, type) -> list:
+        result = list()
+        result.append(f'{type} = {{')
+        for key, value in params.items():
+            result.append(f"    '{key}': _{key.replace('-', '_')} , ")
+
+        result.append('}')
+        return result
+
+    def gen_var_in_url(self, url) -> list:
+        result = []
+
+        vars = re.findall('\{(.*?)\}', url)
+
+        for var in vars:
+            var = var.replace('-', '_')
+            result.append(str(var) + " = ''")
+
+        return result
+
 class CustomCodeRevisor(object):
     def __init__(self, host='localhost', tags=[]):
         self.host = host
