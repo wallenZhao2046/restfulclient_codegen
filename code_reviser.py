@@ -193,10 +193,9 @@ class ServiceCodeRevisor(object):
         logger.info("!!! data is %r" %data)
 
         {req}
+        logger.info('--- result: %r' %res) 
         if res['status'] != 'ok':
             raise Exception("error with detail: %s" %res)
-        res = res.json()
-        logger.info('--- result: %r' %res) 
         return res['data']
 
             '''
