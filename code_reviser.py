@@ -128,14 +128,12 @@ class ServiceCodeRevisor(object):
         service_name = self.tags[0].replace('-', '').replace('controller', '')
 
         import_apart = [
-            'from common_utils.logger import logger',
-            'from common_service.base_service import BaseService',
+            'from common_service.base_service import AutoGenBaseService',
             '',
             '',
-            f'class {service_name}Service(BaseService):',
+            f'class {service_name}Service(AutoGenBaseService):',
             '    def __init__(self, env_name):',
             '        super().__init__(env_name)',
-            '        self.broker_host = self.config_info.get_broker_url()',
         ]
 
         code_lines = code_lines + import_apart
@@ -168,12 +166,10 @@ class ServiceCodeRevisor(object):
             for item in self.__gen_passin(params):
                 param_in += ', ' + item
             case_code = f"    def query{case_name}(self{param_in}):"
-            req = "res = self.http_util.http_get(url, params)"
         else:
             for item in self.__gen_passin(data):
                 param_in += ', ' + item
             case_code = f"    def update{case_name}(self{param_in}):"
-            req = "res = self.http_util.http_post(url, body=data)"
 
         for item in variabled_param:
             case_code = case_code + SEP + '        ' + item
@@ -184,18 +180,10 @@ class ServiceCodeRevisor(object):
         # test code template
         call_code_format = (
             '''
-        url = f'%s{url}' %self.broker_host 
+        url = '%s{url}' %self.broker_url 
         method = '{method}'
 
-        logger.info(f"!!! url is {url}")
-        logger.info("!!! method is %s" %method)
-        logger.info("!!! params is %r" %params)
-        logger.info("!!! data is %r" %data)
-
-        {req}
-        logger.info('--- result: %r' %res) 
-        if res['status'] != 'ok':
-            raise Exception("error with detail: %s" %res)
+        res = self.api_request(url, method, params, data)
         return res['data']
 
             '''
@@ -207,7 +195,6 @@ class ServiceCodeRevisor(object):
             url=variabled_url,
             method=method.lower(),
             params=repr(params),
-            req=req,
             data=data
         )
 
