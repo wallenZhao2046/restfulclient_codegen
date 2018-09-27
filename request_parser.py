@@ -151,20 +151,23 @@ class PostmanCollectionParser(object):
 
 class SwaggerParser(object):
     def __init__(self, fobj: object, include_tags=list()):
-        self.fobj = fobj
+
+        if isinstance(fobj, str):
+            self.content = json.loads(fobj)
+        else:
+            self.content = json.load(fobj)
         self.__include_tags = include_tags
 
     def parse_request(self) -> list:
-        content = json.load(self.fobj)
-        tags = content['tags']
-        if 'host' in content:
-            host = content['host']
+        tags = self.content['tags']
+        if 'host' in self.content:
+            host = self.content['host']
 
-        definitions = content['definitions']
+        definitions = self.content['definitions']
         body_def_dict = self.__parse_definitions(definitions)
 
         req_list = []
-        paths = content['paths']
+        paths = self.content['paths']
 
         for url, req_content in paths.items():
             methods = req_content.keys()
@@ -246,3 +249,10 @@ class SwaggerParser(object):
 
     def __parse_headers(self, content_obj):
         return {}
+
+    def parse_git_tag(self):
+        description = str(self.content['info']['description'])
+        tag = description.split('/')
+        tag_info = tag[1].strip()
+
+        return tag_info

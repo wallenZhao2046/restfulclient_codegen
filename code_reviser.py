@@ -180,7 +180,7 @@ class ServiceCodeRevisor(object):
         # test code template
         call_code_format = (
             '''
-        url = '%s{url}' %self.broker_url 
+        url = f'%s{url}' %self.broker_url 
         method = '{method}'
 
         res = self.api_request(url, method, params, data)
